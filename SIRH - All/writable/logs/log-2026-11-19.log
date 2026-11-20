@@ -1,0 +1,77 @@
+CRITICAL - 2026-11-19 13:29:31 --> CodeIgniter\Exceptions\BadMethodCallException: Call to undefined method App\Models\DemandeModel::compterParStatut
+[Method: GET, Route: direction/demandes]
+in SYSTEMPATH/Model.php on line 761.
+ 1 APPPATH/Controllers/Direction/DemandesController.php(23): CodeIgniter\Model->__call()
+ 2 SYSTEMPATH/CodeIgniter.php(951): App\Controllers\Direction\DemandesController->index()
+ 3 SYSTEMPATH/CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController()
+ 4 SYSTEMPATH/CodeIgniter.php(340): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(417): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+ 8 SYSTEMPATH/rewrite.php(44): require_once('/home/john/PROJET ITU S5/MR TOVO - P/SIRH - All/public/index.php')
+CRITICAL - 2026-11-19 13:29:35 --> CodeIgniter\Exceptions\BadMethodCallException: Call to undefined method App\Models\DemandeModel::compterParStatut
+[Method: GET, Route: direction/demandes]
+in SYSTEMPATH/Model.php on line 761.
+ 1 APPPATH/Controllers/Direction/DemandesController.php(23): CodeIgniter\Model->__call()
+ 2 SYSTEMPATH/CodeIgniter.php(951): App\Controllers\Direction\DemandesController->index()
+ 3 SYSTEMPATH/CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController()
+ 4 SYSTEMPATH/CodeIgniter.php(340): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(417): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+ 8 SYSTEMPATH/rewrite.php(44): require_once('/home/john/PROJET ITU S5/MR TOVO - P/SIRH - All/public/index.php')
+CRITICAL - 2026-11-19 13:29:36 --> CodeIgniter\Exceptions\BadMethodCallException: Call to undefined method App\Models\DemandeModel::compterParStatut
+[Method: GET, Route: direction/demandes]
+in SYSTEMPATH/Model.php on line 761.
+ 1 APPPATH/Controllers/Direction/DemandesController.php(23): CodeIgniter\Model->__call()
+ 2 SYSTEMPATH/CodeIgniter.php(951): App\Controllers\Direction\DemandesController->index()
+ 3 SYSTEMPATH/CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController()
+ 4 SYSTEMPATH/CodeIgniter.php(340): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(417): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+ 8 SYSTEMPATH/rewrite.php(44): require_once('/home/john/PROJET ITU S5/MR TOVO - P/SIRH - All/public/index.php')
+CRITICAL - 2026-11-19 13:29:40 --> CodeIgniter\Exceptions\BadMethodCallException: Call to undefined method App\Models\DemandeModel::compterParStatut
+[Method: GET, Route: direction/demandes]
+in SYSTEMPATH/Model.php on line 761.
+ 1 APPPATH/Controllers/Direction/DemandesController.php(23): CodeIgniter\Model->__call()
+ 2 SYSTEMPATH/CodeIgniter.php(951): App\Controllers\Direction\DemandesController->index()
+ 3 SYSTEMPATH/CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController()
+ 4 SYSTEMPATH/CodeIgniter.php(340): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(417): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+ 8 SYSTEMPATH/rewrite.php(44): require_once('/home/john/PROJET ITU S5/MR TOVO - P/SIRH - All/public/index.php')
+CRITICAL - 2026-11-19 13:29:49 --> CodeIgniter\Exceptions\BadMethodCallException: Call to undefined method App\Models\DemandeModel::compterParStatut
+[Method: GET, Route: direction/demandes]
+in SYSTEMPATH/Model.php on line 761.
+ 1 APPPATH/Controllers/Direction/DemandesController.php(23): CodeIgniter\Model->__call()
+ 2 SYSTEMPATH/CodeIgniter.php(951): App\Controllers\Direction\DemandesController->index()
+ 3 SYSTEMPATH/CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController()
+ 4 SYSTEMPATH/CodeIgniter.php(340): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(417): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+ 8 SYSTEMPATH/rewrite.php(44): require_once('/home/john/PROJET ITU S5/MR TOVO - P/SIRH - All/public/index.php')
+CRITICAL - 2026-11-19 13:30:46 --> CodeIgniter\Exceptions\BadMethodCallException: Call to undefined method App\Models\DemandeModel::compterParStatut
+[Method: GET, Route: direction/demandes]
+in SYSTEMPATH/Model.php on line 761.
+ 1 APPPATH/Controllers/Direction/DemandesController.php(23): CodeIgniter\Model->__call()
+ 2 SYSTEMPATH/CodeIgniter.php(951): App\Controllers\Direction\DemandesController->index()
+ 3 SYSTEMPATH/CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController()
+ 4 SYSTEMPATH/CodeIgniter.php(340): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(417): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+ 8 SYSTEMPATH/rewrite.php(44): require_once('/home/john/PROJET ITU S5/MR TOVO - P/SIRH - All/public/index.php')
+CRITICAL - 2026-11-19 13:30:53 --> CodeIgniter\Exceptions\BadMethodCallException: Call to undefined method App\Models\DemandeModel::compterParStatut
+[Method: GET, Route: direction/demandes]
+in SYSTEMPATH/Model.php on line 761.
+ 1 APPPATH/Controllers/Direction/DemandesController.php(23): CodeIgniter\Model->__call()
+ 2 SYSTEMPATH/CodeIgniter.php(951): App\Controllers\Direction\DemandesController->index()
+ 3 SYSTEMPATH/CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController()
+ 4 SYSTEMPATH/CodeIgniter.php(340): CodeIgniter\CodeIgniter->handleRequest()
+ 5 SYSTEMPATH/Boot.php(417): CodeIgniter\CodeIgniter->run()
+ 6 SYSTEMPATH/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+ 7 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+ 8 SYSTEMPATH/rewrite.php(44): require_once('/home/john/PROJET ITU S5/MR TOVO - P/SIRH - All/public/index.php')
