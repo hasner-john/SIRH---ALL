@@ -42,11 +42,17 @@ class DemoDatabaseSeeder
                 throw new RuntimeException('Le fichier base_recrutement.sql est introuvable.');
             }
             $pdo->exec((string) file_get_contents($schema));
+            // Blocs 8 à 12 : migration passée après le schéma et avant les données
+            $migration = ROOTPATH . 'migration_blocs_8_12.sql';
+            if (! is_file($migration)) {
+                throw new RuntimeException('Le fichier migration_blocs_8_12.sql est introuvable.');
+            }
+            $pdo->exec((string) file_get_contents($migration));
         }
 
         $pdo->beginTransaction();
         try {
-            if ($reset) {
+            if ($reset && $hasSchema) {   // base neuve : le schéma, la migration et leurs données de référence sont conservés
                 $this->clearTables($pdo);
             }
             $this->seed($pdo);
@@ -69,9 +75,9 @@ class DemoDatabaseSeeder
             ['id_utilisateur' => 4, 'email' => 'departement@test.local', 'mot_de_passe_hash' => $password, 'role' => 'DEPARTEMENT', 'actif' => 1, 'date_creation' => '2025-01-01 08:00:00'],
             ['id_utilisateur' => 5, 'email' => 'finance@test.local', 'mot_de_passe_hash' => $password, 'role' => 'FINANCE', 'actif' => 1, 'date_creation' => '2025-01-01 08:00:00'],
             ['id_utilisateur' => 6, 'email' => 'candidat@test.local', 'mot_de_passe_hash' => $password, 'role' => 'CANDIDAT', 'actif' => 1, 'date_creation' => '2025-01-01 08:00:00'],
-            ['id_utilisateur' => 7, 'email' => 'employe1@test.local', 'mot_de_passe_hash' => $password, 'role' => 'CANDIDAT', 'actif' => 1, 'date_creation' => '2025-01-01 08:00:00'],
-            ['id_utilisateur' => 8, 'email' => 'employe2@test.local', 'mot_de_passe_hash' => $password, 'role' => 'CANDIDAT', 'actif' => 1, 'date_creation' => '2025-01-01 08:00:00'],
-            ['id_utilisateur' => 9, 'email' => 'employe3@test.local', 'mot_de_passe_hash' => $password, 'role' => 'CANDIDAT', 'actif' => 1, 'date_creation' => '2025-01-01 08:00:00'],
+            ['id_utilisateur' => 7, 'email' => 'employe1@test.local', 'mot_de_passe_hash' => $password, 'role' => 'EMPLOYE', 'actif' => 1, 'date_creation' => '2025-01-01 08:00:00'],
+            ['id_utilisateur' => 8, 'email' => 'employe2@test.local', 'mot_de_passe_hash' => $password, 'role' => 'EMPLOYE', 'actif' => 1, 'date_creation' => '2025-01-01 08:00:00'],
+            ['id_utilisateur' => 9, 'email' => 'employe3@test.local', 'mot_de_passe_hash' => $password, 'role' => 'EMPLOYE', 'actif' => 1, 'date_creation' => '2025-01-01 08:00:00'],
         ]);
         $this->insert($pdo, 'departement', [
             ['id_departement' => 1, 'nom' => 'Ressources humaines', 'description' => 'Administration du personnel', 'actif' => 1],
@@ -123,11 +129,12 @@ class DemoDatabaseSeeder
             ['id_contrat' => 4, 'id_candidature' => 4, 'reference' => 'CTR-2025-004', 'type_contrat' => 'CDI', 'date_debut' => '2025-05-01', 'date_fin' => null, 'salaire' => 1750000, 'periodicite_salaire' => 'MENSUEL', 'lieu_travail' => 'Antananarivo', 'missions' => 'Tests et qualité logicielle', 'horaires' => '08:00-17:00', 'conges_absences' => 'Selon règlement intérieur', 'statut' => 'SIGNE', 'pdf_nom' => 'contrat-CTR-2025-004.pdf', 'pdf_type_mime' => 'application/pdf', 'pdf_donnees' => $this->contratPdf('CTR-2025-004', 'Faly Randria', 'Testeur logiciel', 1750000), 'date_signature' => '2025-04-15'],
         ]);
         $this->insert($pdo, 'employe', [
-            ['id_employe' => 1, 'id_contrat' => 1, 'id_personne' => 3, 'matricule' => 'EMP-0001', 'date_embauche' => '2025-02-01', 'statut' => 'ACTIF'],
-            ['id_employe' => 2, 'id_contrat' => 2, 'id_personne' => 4, 'matricule' => 'EMP-0002', 'date_embauche' => '2025-03-01', 'statut' => 'ACTIF'],
-            ['id_employe' => 3, 'id_contrat' => 3, 'id_personne' => 5, 'matricule' => 'EMP-0003', 'date_embauche' => '2025-04-01', 'statut' => 'ACTIF'],
-            ['id_employe' => 4, 'id_contrat' => 4, 'id_personne' => 6, 'matricule' => 'EMP-0004', 'date_embauche' => '2025-05-01', 'statut' => 'ACTIF'],
+            ['id_employe' => 1, 'id_contrat' => 1, 'id_personne' => 3, 'matricule' => 'EMP-0001', 'date_embauche' => '2025-02-01', 'statut' => 'ACTIF', 'id_poste' => 2],
+            ['id_employe' => 2, 'id_contrat' => 2, 'id_personne' => 4, 'matricule' => 'EMP-0002', 'date_embauche' => '2025-03-01', 'statut' => 'ACTIF', 'id_poste' => 2],
+            ['id_employe' => 3, 'id_contrat' => 3, 'id_personne' => 5, 'matricule' => 'EMP-0003', 'date_embauche' => '2025-04-01', 'statut' => 'ACTIF', 'id_poste' => 2],
+            ['id_employe' => 4, 'id_contrat' => 4, 'id_personne' => 6, 'matricule' => 'EMP-0004', 'date_embauche' => '2025-05-01', 'statut' => 'ACTIF', 'id_poste' => 2],
         ]);
+        $pdo->exec('UPDATE contrat SET id_poste = 2 WHERE id_poste IS NULL');
         $this->insert($pdo, 'affectation', [
             ['id_affectation' => 1, 'id_employe' => 1, 'id_departement' => 2, 'date_debut' => '2025-02-01', 'date_fin' => null, 'fonction' => 'Développeur logiciel'],
             ['id_affectation' => 2, 'id_employe' => 2, 'id_departement' => 2, 'date_debut' => '2025-03-01', 'date_fin' => null, 'fonction' => 'Développeur logiciel'],
@@ -150,6 +157,7 @@ class DemoDatabaseSeeder
             ['id_regime' => 1, 'libelle' => 'Temps plein', 'heures_hebdomadaires' => 40, 'actif' => 1],
             ['id_regime' => 2, 'libelle' => 'Temps partiel', 'heures_hebdomadaires' => 20, 'actif' => 1],
         ]);
+        $pdo->exec('UPDATE employe SET id_regime = 1');
         $this->insert($pdo, 'horaire', [
             ['id_horaire' => 1, 'id_regime' => 1, 'libelle' => 'Horaire standard', 'heure_debut' => '08:00', 'heure_fin' => '17:00', 'pause_minutes' => 60, 'actif' => 1],
         ]);
@@ -173,9 +181,9 @@ class DemoDatabaseSeeder
             ['id_anomalie' => 1, 'id_pointage' => 2, 'id_employe' => 1, 'date_anomalie' => '2025-02-11', 'type_anomalie' => 'SORTIE_MANQUANTE', 'description' => 'Heure de sortie absente', 'statut' => 'OUVERTE', 'date_resolution' => null],
         ]);
         $this->insert($pdo, 'type_conge', [
-            ['id_type_conge' => 1, 'code' => 'CA', 'libelle' => 'Congé annuel', 'description' => 'Congé payé annuel', 'jours_annuels' => 30, 'justificatif_obligatoire' => 0, 'actif' => 1],
-            ['id_type_conge' => 2, 'code' => 'MAL', 'libelle' => 'Congé maladie', 'description' => 'Absence pour maladie', 'jours_annuels' => 0, 'justificatif_obligatoire' => 1, 'actif' => 1],
-        ]);
+            ['id_type_conge' => 1, 'code' => 'ANNUEL', 'libelle' => 'Congé annuel', 'description' => 'Congé payé annuel', 'jours_annuels' => 30, 'justificatif_obligatoire' => 0, 'actif' => 1],
+            ['id_type_conge' => 2, 'code' => 'MALADIE', 'libelle' => 'Congé maladie', 'description' => 'Absence pour maladie', 'jours_annuels' => 0, 'justificatif_obligatoire' => 1, 'actif' => 1],
+        ], 'INSERT OR IGNORE');
         $this->insert($pdo, 'droit_conge', [
             ['id_droit_conge' => 1, 'id_type_conge' => 1, 'code_role' => 'EMPLOYE', 'anciennete_mois' => 0, 'jours_annuels' => 30],
             ['id_droit_conge' => 2, 'id_type_conge' => 2, 'code_role' => 'EMPLOYE', 'anciennete_mois' => 0, 'jours_annuels' => 0],
@@ -252,7 +260,7 @@ class DemoDatabaseSeeder
             ['id_parametre' => 29, 'code' => 'COEF_DIMANCHE', 'valeur' => 2, 'secteur' => 'AGRICOLE', 'date_effet' => '2025-01-01', 'date_fin' => null],
             ['id_parametre' => 30, 'code' => 'COEF_NUIT', 'valeur' => 1.5, 'secteur' => 'AGRICOLE', 'date_effet' => '2025-01-01', 'date_fin' => null],
             ['id_parametre' => 31, 'code' => 'SME', 'valeur' => 350000, 'secteur' => 'AGRICOLE', 'date_effet' => '2025-01-01', 'date_fin' => null],
-        ]);
+        ], 'INSERT OR IGNORE');
         $this->insert($pdo, 'bareme_irsa', [
             ['id_bareme' => 1, 'borne_inf' => 0, 'borne_sup' => 350000, 'taux' => 0, 'date_effet' => '2000-01-01', 'date_fin' => null],
             ['id_bareme' => 2, 'borne_inf' => 350000, 'borne_sup' => 400000, 'taux' => 0.05, 'date_effet' => '2000-01-01', 'date_fin' => null],
@@ -260,21 +268,18 @@ class DemoDatabaseSeeder
             ['id_bareme' => 4, 'borne_inf' => 500000, 'borne_sup' => 600000, 'taux' => 0.15, 'date_effet' => '2000-01-01', 'date_fin' => null],
             ['id_bareme' => 5, 'borne_inf' => 600000, 'borne_sup' => 4000000, 'taux' => 0.20, 'date_effet' => '2000-01-01', 'date_fin' => null],
             ['id_bareme' => 6, 'borne_inf' => 4000000, 'borne_sup' => null, 'taux' => 0.25, 'date_effet' => '2000-01-01', 'date_fin' => null],
-        ]);
-        $this->insert($pdo, 'rubrique_paie', [
-            ['id_rubrique' => 1, 'code' => 'INDEMNITE', 'libelle' => 'Indemnité', 'nature' => 'GAIN', 'imposable' => 1, 'actif' => 1],
-            ['id_rubrique' => 2, 'code' => 'MAJORATION', 'libelle' => 'Heures majorées', 'nature' => 'GAIN', 'imposable' => 1, 'actif' => 1],
-            ['id_rubrique' => 3, 'code' => 'RETENUE', 'libelle' => 'Avance ou acompte', 'nature' => 'RETENUE', 'imposable' => 0, 'actif' => 1],
-        ]);
+        ], 'INSERT OR IGNORE');
         $this->insert($pdo, 'periode_paie', [
             ['id_periode' => 1, 'mois' => 10, 'annee' => $year, 'date_paiement' => "$year-10-31", 'statut' => 'VALIDE'],
             ['id_periode' => 2, 'mois' => 11, 'annee' => $year, 'date_paiement' => "$year-11-30", 'statut' => 'OUVERT'],
         ]);
+        $rub = static fn (string $code): int => (int) $pdo->query("SELECT id_rubrique FROM rubrique_paie WHERE code = '$code'")->fetchColumn();
         $this->insert($pdo, 'variable_paie', [
-            ['id_variable' => 1, 'id_employe' => 1, 'id_periode' => 2, 'id_rubrique' => 1, 'nombre' => 1, 'montant' => 150000, 'motif' => 'Indemnité de transport'],
-            ['id_variable' => 2, 'id_employe' => 1, 'id_periode' => 2, 'id_rubrique' => 2, 'nombre' => 5, 'montant' => 55000, 'motif' => 'Heures supplémentaires majorées'],
-            ['id_variable' => 3, 'id_employe' => 2, 'id_periode' => 2, 'id_rubrique' => 1, 'nombre' => 1, 'montant' => 100000, 'motif' => 'Indemnité logement'],
-            ['id_variable' => 4, 'id_employe' => 3, 'id_periode' => 2, 'id_rubrique' => 3, 'nombre' => 1, 'montant' => 50000, 'motif' => 'Acompte'],
+            ['id_variable' => 1, 'id_employe' => 1, 'id_periode' => 2, 'id_rubrique' => $rub('INDEMNITE_TRANSPORT'), 'nombre' => 1, 'montant' => 150000, 'motif' => 'Indemnité de transport'],
+            ['id_variable' => 2, 'id_employe' => 1, 'id_periode' => 2, 'id_rubrique' => $rub('PRIME'), 'nombre' => 1, 'montant' => 100000, 'motif' => 'Prime de performance'],
+            ['id_variable' => 3, 'id_employe' => 1, 'id_periode' => 2, 'id_rubrique' => $rub('INDEMNITE_NON_IMPOSABLE'), 'nombre' => 1, 'montant' => 50000, 'motif' => 'Indemnité non imposable'],
+            ['id_variable' => 4, 'id_employe' => 2, 'id_periode' => 2, 'id_rubrique' => $rub('INDEMNITE_LOGEMENT'), 'nombre' => 1, 'montant' => 100000, 'motif' => 'Indemnité logement'],
+            ['id_variable' => 5, 'id_employe' => 3, 'id_periode' => 2, 'id_rubrique' => $rub('RETENUE'), 'nombre' => 1, 'montant' => 50000, 'motif' => 'Acompte'],
         ]);
 
         $this->insert($pdo, 'competence', [
@@ -392,7 +397,7 @@ class DemoDatabaseSeeder
         return $pdf;
     }
 
-    private function insert(\PDO $pdo, string $table, array $rows): void
+    private function insert(\PDO $pdo, string $table, array $rows, string $mode = 'INSERT'): void
     {
         if ($rows === []) {
             return;
@@ -400,9 +405,13 @@ class DemoDatabaseSeeder
         $columns = array_keys($rows[0]);
         $fields = implode(', ', array_map(static fn (string $column): string => '"' . $column . '"', $columns));
         $parameters = implode(', ', array_fill(0, count($columns), '?'));
-        $statement = $pdo->prepare("INSERT INTO \"$table\" ($fields) VALUES ($parameters)");
+        $statement = $pdo->prepare("$mode INTO \"$table\" ($fields) VALUES ($parameters)");
         foreach ($rows as $row) {
-            $statement->execute(array_map(static fn (string $column): mixed => $row[$column] ?? null, $columns));
+            try {
+                $statement->execute(array_map(static fn (string $column): mixed => $row[$column] ?? null, $columns));
+            } catch (\PDOException $e) {
+                throw new RuntimeException("Seed : échec d'insertion dans $table (" . $e->getMessage() . ') ligne ' . json_encode(array_map(static fn ($v) => is_string($v) && strlen($v) > 40 ? substr($v, 0, 40) . '…' : $v, $row), JSON_UNESCAPED_UNICODE), 0, $e);
+            }
         }
     }
 

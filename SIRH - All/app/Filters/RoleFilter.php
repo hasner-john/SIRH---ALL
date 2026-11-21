@@ -31,6 +31,19 @@ class RoleFilter implements FilterInterface
                 ->with('error', 'Veuillez vous connecter.');
         }
 
+        // Coupure des accès : un compte désactivé (ex. sortie de l'employé) perd sa session
+        $actif = \Config\Database::connect()->table('utilisateur')->select('actif')
+            ->where('id_utilisateur', (int) $session->get('id_utilisateur'))->get()->getRow('actif');
+        if ($actif === null || (int) $actif === 0) {
+            $session->destroy();
+            return redirect()->to('/connexion')->with('error', 'Votre compte est désactivé.');
+        }
+
+        // L'administrateur passe partout
+        if (strtoupper((string) $session->get('role')) === 'ADMINISTRATEUR') {
+            return;
+        }
+
         // Aucun argument = simplement "utilisateur connecté"
         if ($arguments === null || $arguments === []) {
             return;
@@ -62,6 +75,7 @@ class RoleFilter implements FilterInterface
             'DIRECTION'      => '/direction',
             'CANDIDAT'       => '/candidat',
             'ADMINISTRATEUR' => '/admin',
+            'EMPLOYE'        => '/employe',
             'FINANCE'        => '/direction', // ou /finance si espace dédié plus tard
             default          => '/connexion',
         };

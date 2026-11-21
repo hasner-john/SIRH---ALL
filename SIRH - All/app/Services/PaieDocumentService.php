@@ -36,10 +36,10 @@ class PaieDocumentService
         $ws->setTitle('État de paie');
         $ws->setCellValue('A1', sprintf('ÉTAT DE PAIE — %02d/%04d', $p['mois'], $p['annee']));
         $heads = ['DATE', 'NBRE', 'N° MATR', 'N° CNaPS', 'NOM et Prénoms', "Date d'embauche", 'ABSENCE du mois (h)',
-            'CAT', 'Fonction', 'SALAIRE DE BASE', 'RETENUES SUR ABSENCE', 'SALAIRE DE BASE DU MOIS', 'INDEMNITÉS',
+            'CAT', 'Fonction', 'SALAIRE DE BASE', 'RETENUES (absence, retards, mise à pied, prorata)', 'SALAIRE DE BASE DU MOIS', 'INDEMNITÉS',
             'RAPPEL AUTRES', 'HR SUP / MAJORATIONS', 'TOTAL SALAIRE BRUT', 'CNaPS SALARIAL (1%)',
             'CNaPS PATRONAL (13%)', 'OSTIE SALARIAL (1%)', 'OSTIE PATRONAL (5%)', 'NET IMPOSABLE', 'IRSA',
-            'TOTAL RETENUES', 'NET À PAYER'];
+            'TOTAL RETENUES', 'NET À PAYER', 'dont indemnités non imposables', 'Payé via STC'];
         $ws->fromArray($heads, null, 'A4');
 
         $date = strtolower(date('d-M-y', strtotime($p['date_paiement'] ?? 'now')));
@@ -49,22 +49,23 @@ class PaieDocumentService
             $ws->fromArray([
                 $date, $i++, $b['matricule'], $b['numero_cnaps'], $b['nom'] . ' ' . $b['prenom'], $b['date_embauche'],
                 (float) $b['heures_absence'], $b['categorie'], $b['fonction'],
-                (float) $b['salaire_base'], (float) $b['retenue_absence'], (float) $b['base_mois'],
+                (float) $b['salaire_base'], (float) $b['retenue_absence'] + (float) $b['retenue_retard'] + (float) $b['retenue_mise_a_pied'] + (float) $b['retenue_prorata'], (float) $b['base_mois'],
                 (float) $b['indemnites'], (float) $b['rappels'], (float) $b['majorations'], (float) $b['salaire_brut'],
                 (float) $b['cnaps_salarial'], (float) $b['cnaps_patronal'], (float) $b['ostie_salarial'],
                 (float) $b['ostie_patronal'], (float) $b['net_imposable'], (float) $b['irsa'],
                 (float) $b['total_retenues'], (float) $b['net_a_payer'],
+                (float) $b['indemnites_non_imposables'], (int) $b['inclus_stc'] ? 'oui' : 'non',
             ], null, 'A' . $r++);
         }
         $last = max(5, $r - 1);
         $ws->setCellValue("A$r", 'TOTAL GÉNÉRAL');
-        foreach (range('J', 'X') as $col) {
+        foreach (range('J', 'Y') as $col) {
             $ws->setCellValue("$col$r", "=SUM({$col}5:{$col}{$last})");
         }
-        $ws->getStyle("J5:X$r")->getNumberFormat()->setFormatCode('#,##0');
-        $ws->getStyle('A4:X4')->getFont()->setBold(true);
-        $ws->getStyle("A$r:X$r")->getFont()->setBold(true);
-        foreach (range('A', 'X') as $col) {
+        $ws->getStyle("J5:Y$r")->getNumberFormat()->setFormatCode('#,##0');
+        $ws->getStyle('A4:Z4')->getFont()->setBold(true);
+        $ws->getStyle("A$r:Z$r")->getFont()->setBold(true);
+        foreach (range('A', 'Z') as $col) {
             $ws->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -110,7 +111,7 @@ class PaieDocumentService
             'tranches' => $svc->detailIrsa((float) $b['net_imposable'], $fin),
             'entreprise' => config('Entreprise'),
             'lettres' => $this->enLettres((float) $b['net_a_payer']),
-            'taux_jour' => $b['salaire_base'] / 30,
+            'taux_jour' => $b['salaire_base'] / max(1, \App\Libraries\ParametrePaie::get('DIVISEUR_JOURS', $b['secteur'] ?: 'NON_AGRICOLE', $fin, 30)),
             'anciennete' => (new \DateTime($b['date_embauche']))->diff(new \DateTime($fin))->y . ' an(s)',
         ]);
         $pdf = new Dompdf();
@@ -124,7 +125,7 @@ class PaieDocumentService
         return [$nom, $bin, (int) $b['eid']];
     }
 
-    private function enLettres(float $n): string
+    public function enLettres(float $n): string
     {
         if (! class_exists(\NumberFormatter::class)) {
             return number_format($n, 0, ',', ' ') . ' Ariary';

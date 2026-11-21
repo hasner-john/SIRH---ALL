@@ -395,3 +395,30 @@ Les logs CodeIgniter sont disponibles dans :
 ```text
 writable/logs/
 ```
+
+---
+
+## Blocs 8 à 12 (paie, évaluation/formation, carrière, discipline, rupture)
+
+**Recréer la base** (schéma `base_recrutement.sql` → `migration_blocs_8_12.sql` → données de démonstration) :
+
+```bash
+php spark db:reset --force
+php spark serve          # http://localhost:8080
+```
+
+**Connexion rapide par rôle** : `http://localhost:8080/dev/login-as/<ROLE>`
+
+| Rôle | Compte | Usage de test |
+|---|---|---|
+| `RH`, `ADMINISTRATEUR` | rh@ / admin@test.local | toutes les pages `rh/*` (la page `admin` liste tous les liens) |
+| `DIRECTION` | direction@test.local | embauche directe, validation d'une rupture |
+| `EMPLOYE` | employe3@test.local (Faly Randria) | discipline : demande d'explications, réponse, contestation |
+| `EMPLOYE1` | employe1@test.local (Lova Rabe) | formations, évaluations |
+| `EMPLOYE2` | employe2@test.local (Soa Rakotoarisoa) | rupture FIN_CDD |
+
+Mot de passe de tous les comptes de démonstration : `password`.
+
+**Cas de calcul de référence (période 11/2026, 30 jours)** : retard de 60 min = base × 60 / 173,33 / 60 déduit du brut ;
+embauche le 20/11 = 11/30 (retenue de prorata sur 19 jours) ; mise à pied de 3 j = 3 × base / 30 ;
+sortie le 18/11 = 18/30 avec `inclus_stc = 1` ; IRSA minimum de perception (paramètre `IRSA_MINIMUM`, 3 000 Ar).

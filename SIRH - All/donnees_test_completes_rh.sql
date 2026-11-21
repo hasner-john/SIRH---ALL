@@ -156,8 +156,7 @@ INSERT OR IGNORE INTO contrat(id_contrat,id_candidature,reference,type_contrat,d
 (3,5,'CTR-2026-003','CE','2026-05-01','2026-10-31',380000,'MENSUEL','Antananarivo','Appui developpement','40h/semaine','Selon convention','SIGNE','2026-04-20 10:00:00'),
 (4,6,'CTR-2026-004','CDI','2026-06-01',NULL,450000,'MENSUEL','Antananarivo','Support informatique','40h/semaine','Conges selon reglement','SIGNE','2026-05-20 10:00:00'),
 (5,7,'CTR-2026-005','CDD','2026-06-01','2026-12-31',900000,'MENSUEL','Antananarivo','Comptabilite','40h/semaine','Conges selon reglement','SIGNE','2026-05-25 10:00:00'),
-(6,8,'CTR-2026-006','CDI','2026-07-01',NULL,550000,'MENSUEL','Antananarivo','Gestion finance','40h/semaine','Conges selon reglement','SIGNE','2026-06-20 10:00:00'),
-(7,1,'CTR-2026-001','CDI','2026-04-01',NULL,1200000,'MENSUEL','Antananarivo','Developpement logiciel','40h/semaine','Conges selon reglement','SIGNE','2026-03-20 10:00:00');
+(6,8,'CTR-2026-006','CDI','2026-07-01',NULL,550000,'MENSUEL','Antananarivo','Gestion finance','40h/semaine','Conges selon reglement','SIGNE','2026-06-20 10:00:00');
 
 INSERT OR IGNORE INTO contrat_condition(id_contrat_condition,id_contrat,libelle,type_valeur,valeur_finale,ordre_affichage) VALUES
 (1,1,'Salaire mensuel','MONTANT','1200000',1),(2,1,'Lieu de travail','TEXTE','Antananarivo',2),(3,1,'Teletravail','BOOLEEN','Oui',3),

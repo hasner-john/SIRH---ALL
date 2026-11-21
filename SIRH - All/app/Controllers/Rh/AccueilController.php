@@ -13,6 +13,13 @@ class AccueilController extends BaseController
     public function index()
     {
         $db = \Config\Database::connect();
+        // Automatismes à l'ouverture de l'accueil : mouvements planifiés et sorties dont la date est atteinte
+        try {
+            (new \App\Services\CarriereService())->appliquerEchus((int) session()->get('id_utilisateur'));
+            (new \App\Services\RuptureService())->appliquerSorties();
+        } catch (\Throwable $e) {
+            log_message('error', 'Accueil RH : ' . $e->getMessage());
+        }
 
         return view('rh/accueil', [
             'titre' => 'Espace RH',

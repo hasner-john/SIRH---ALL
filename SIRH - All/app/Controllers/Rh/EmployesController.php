@@ -100,6 +100,10 @@ class EmployesController extends BaseController
             return redirect()->back()->withInput()->with('error', 'Affectation invalide.');
         }
         $db = \Config\Database::connect();
+        $chevauche = \App\Services\CarriereService::verifierChevauchement($idEmploye, $dateDebut);
+        if ($chevauche !== null) {
+            return redirect()->back()->withInput()->with('error', $chevauche);
+        }
         $db->transBegin();
         $db->table('affectation')->where(['id_employe' => $idEmploye, 'date_fin' => null])
             ->update(['date_fin' => date('Y-m-d', strtotime($dateDebut . ' -1 day'))]);

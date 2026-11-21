@@ -138,31 +138,98 @@ $routes->group('rh', ['filter' => 'role:RH,ADMINISTRATEUR'], static function ($r
     $routes->post('employes/(:num)/salaires', 'Rh\EmployesController::ajouterSalaire/$1');
     $routes->post('employes/(:num)/affectations', 'Rh\EmployesController::ajouterAffectation/$1');
     $routes->post('employes/(:num)/documents', 'Rh\EmployesController::ajouterDocument/$1');
-    // Blocs 8 à 12
+    // ------------------------------------------------------------------
+    // Blocs 8 à 12 (squelette complet, posé une seule fois)
+    // ------------------------------------------------------------------
+    // Paie : consultation, état Excel, bulletin PDF
     $routes->get('modules-avances', 'Rh\ModulesAvancesController::index');
-    $routes->post('modules-avances/paie/calculer', 'Rh\ModulesAvancesController::calculerPaie');
-
-    $routes->post('modules-avances/paie/valider', 'Rh\ModulesAvancesController::validerPaie');
     $routes->get('modules-avances/paie/etat/(:num)', 'Rh\ModulesAvancesController::etatPaie/$1');
     $routes->get('modules-avances/paie/bulletin/(:num)', 'Rh\ModulesAvancesController::bulletinPdf/$1');
-
-    $routes->post('modules-avances/carriere', 'Rh\ModulesAvancesController::creationCarriere');
-    $routes->post('modules-avances/formations', 'Rh\ModulesAvancesController::creerFormation');
-    $routes->post('modules-avances/incidents', 'Rh\ModulesAvancesController::creerIncident');
-    $routes->post('modules-avances/incidents/explications', 'Rh\ModulesAvancesController::demanderExplication');
-    $routes->post('modules-avances/incidents/reponse', 'Rh\ModulesAvancesController::repondreExplication');
-    $routes->post('modules-avances/incidents/sanction', 'Rh\ModulesAvancesController::sanctionner');
-    $routes->post('modules-avances/ruptures', 'Rh\ModulesAvancesController::creerRupture');
-
     $routes->get('modules-avances/paie/consulter', 'Rh\ModulesAvancesController::consulterPaie');
-});
 
-// -------------------------------------------------------------------------
-// Espace Direction — D / Rindra
-// -------------------------------------------------------------------------
-$routes->group('direction', ['filter' => 'role:DIRECTION,FINANCE'], static function ($routes) {
-    $routes->get('/', 'Direction\AccueilController::index');
-    // Direction : validation offres, candidatures, retenue, contrats
+    // Embauche directe, contrats, statut employé
+    $routes->get('employes/nouveau', 'Rh\EmbaucheController::nouveau');
+    $routes->post('employes/creer', 'Rh\EmbaucheController::creer');
+    $routes->get('employes/(:num)/parcours', 'Rh\CarriereController::parcours/$1');
+    $routes->get('contrats/(:num)/pdf', 'Rh\ContratsController::pdf/$1');
+    $routes->post('contrats/(:num)/statut', 'Rh\ContratsController::changerStatut/$1');
+
+    // Paie
+    $routes->get('paie/periodes', 'Rh\PeriodesPaieController::index');
+    $routes->post('paie/periodes', 'Rh\PeriodesPaieController::creer');
+    $routes->post('paie/periodes/(:num)/statut', 'Rh\PeriodesPaieController::statut/$1');
+    $routes->get('paie/variables', 'Rh\VariablesPaieController::index');
+    $routes->post('paie/variables', 'Rh\VariablesPaieController::enregistrer');
+    $routes->post('paie/variables/(:num)/supprimer', 'Rh\VariablesPaieController::supprimer/$1');
+    $routes->get('paie/heures-supplementaires', 'Rh\HeuresSuppController::index');
+    $routes->get('paie/heures-supplementaires/apercu', 'Rh\HeuresSuppController::apercu');
+    $routes->post('paie/heures-supplementaires', 'Rh\HeuresSuppController::enregistrer');
+    $routes->post('paie/heures-supplementaires/(:num)/decision', 'Rh\HeuresSuppController::decision/$1');
+    $routes->get('temps-travail/retards', 'Rh\TempsTravailController::retards');
+    $routes->post('temps-travail/retards', 'Rh\TempsTravailController::creerRetard');
+    $routes->post('temps-travail/retards/(:num)/justifier', 'Rh\TempsTravailController::justifier/$1');
+    $routes->post('temps-travail/retards/(:num)/valider', 'Rh\TempsTravailController::validerRetard/$1');
+
+    // Paramètres RH
+    $routes->get('parametres', 'Rh\ParametresRhController::index');
+    $routes->post('parametres', 'Rh\ParametresRhController::enregistrer');
+
+    // Évaluation et formation
+    $routes->get('competences', 'Rh\CompetencesController::index');
+    $routes->post('competences', 'Rh\CompetencesController::enregistrer');
+    $routes->post('competences/poste', 'Rh\CompetencesController::lierPoste');
+    $routes->get('performance', 'Rh\PerformanceController::index');
+    $routes->get('performance/nouvelle/(:num)', 'Rh\PerformanceController::nouvelle/$1');
+    $routes->post('performance/enregistrer', 'Rh\PerformanceController::enregistrer');
+    $routes->post('performance/(:num)/valider', 'Rh\PerformanceController::valider/$1');
+    $routes->get('performance/(:num)', 'Rh\PerformanceController::detail/$1');
+    $routes->get('formations', 'Rh\FormationsController::index');
+    $routes->post('formations', 'Rh\FormationsController::creer');
+    $routes->get('formations/propositions', 'Rh\FormationsController::propositions');
+    $routes->post('formations/propositions/(:num)/assigner', 'Rh\FormationsController::assignerProposition/$1');
+    $routes->post('formations/propositions/(:num)/refuser', 'Rh\FormationsController::refuserProposition/$1');
+    $routes->post('formations/propositions/recalculer', 'Rh\FormationsController::recalculer');
+    $routes->get('formations/assigner', 'Rh\FormationsController::assigner');
+    $routes->post('formations/assigner', 'Rh\FormationsController::enregistrerAssignation');
+    $routes->get('formations/apport', 'Rh\FormationsController::apport');
+    $routes->get('formations/(:num)', 'Rh\FormationsController::fiche/$1');
+    $routes->post('formations/(:num)/statut', 'Rh\FormationsController::statut/$1');
+    $routes->post('formations/(:num)/niveau-apres', 'Rh\FormationsController::niveauApres/$1');
+    $routes->post('formations/(:num)/participants/(:num)/statut', 'Rh\FormationsController::statutParticipant/$1/$2');
+
+    // Carrière
+    $routes->get('carriere', 'Rh\CarriereController::index');
+    $routes->get('carriere/mouvement', 'Rh\CarriereController::formulaire');
+    $routes->post('carriere/mouvement', 'Rh\CarriereController::enregistrer');
+    $routes->post('carriere/(:num)/annuler', 'Rh\CarriereController::annuler/$1');
+    $routes->get('carriere/propositions', 'Rh\CarriereController::propositions');
+    $routes->post('carriere/propositions/generer', 'Rh\CarriereController::generer');
+    $routes->post('carriere/propositions/(:num)/suivre', 'Rh\CarriereController::suivre/$1');
+    $routes->post('carriere/propositions/(:num)/refuser', 'Rh\CarriereController::refuser/$1');
+
+    // Discipline
+    $routes->get('discipline/incidents', 'Rh\DisciplineController::incidents');
+    $routes->get('discipline/incidents/(:num)', 'Rh\DisciplineController::dossier/$1');
+    $routes->post('discipline/incidents', 'Rh\DisciplineController::creerIncident');
+    $routes->post('discipline/incidents/(:num)/explications', 'Rh\DisciplineController::demanderExplication/$1');
+    $routes->post('discipline/incidents/(:num)/reponse', 'Rh\DisciplineController::saisirReponse/$1');
+    $routes->post('discipline/incidents/(:num)/commission', 'Rh\DisciplineController::commission/$1');
+    $routes->post('discipline/incidents/(:num)/decision', 'Rh\DisciplineController::decider/$1');
+    $routes->get('discipline/sanctions', 'Rh\DisciplineController::sanctions');
+    $routes->post('discipline/sanctions/(:num)/statut', 'Rh\DisciplineController::statutSanction/$1');
+    $routes->get('discipline/reponses', 'Rh\DisciplineController::reponses');
+    $routes->get('discipline/reponses/(:num)/piece', 'Rh\DisciplineController::piece/$1');
+
+    // Ruptures
+    $routes->get('ruptures', 'Rh\RupturesController::index');
+    $routes->post('ruptures', 'Rh\RupturesController::creer');
+    $routes->get('ruptures/(:num)', 'Rh\RupturesController::show/$1');
+    $routes->post('ruptures/(:num)/statut', 'Rh\RupturesController::statut/$1');
+    $routes->post('ruptures/(:num)/checklist/(:num)', 'Rh\RupturesController::checklist/$1/$2');
+    $routes->post('ruptures/(:num)/stc/calculer', 'Rh\RupturesController::calculerStc/$1');
+    $routes->post('ruptures/(:num)/stc/statut', 'Rh\RupturesController::statutStc/$1');
+    $routes->get('ruptures/(:num)/stc/pdf', 'Rh\RupturesController::stcPdf/$1');
+    $routes->get('ruptures/(:num)/attestations/(:num)/pdf', 'Rh\RupturesController::attestationPdf/$1/$2');
 });
 
 // -------------------------------------------------------------------------
@@ -183,6 +250,12 @@ $routes->group('direction', ['filter' => 'role:DIRECTION,FINANCE'], static funct
     $routes->post('candidatures/(:num)/retenir',            'Direction\CandidaturesController::retenir/$1');
     $routes->get('candidatures/(:num)/document/(:segment)', 'Direction\CandidaturesController::document/$1/$2');
 
+
+    // Embauche directe et validation des ruptures (contrôleurs RH partagés)
+    $routes->get('employes/nouveau', 'Rh\EmbaucheController::nouveau');
+    $routes->post('employes/creer', 'Rh\EmbaucheController::creer');
+    $routes->get('ruptures/(:num)', 'Rh\RupturesController::show/$1');
+    $routes->post('ruptures/(:num)/statut', 'Rh\RupturesController::statut/$1');
 
     // Demandes de recrutement
     $routes->get('demandes',                 'Direction\DemandesController::index');
@@ -249,6 +322,22 @@ $routes->group('api', ['filter' => 'role:DIRECTION,FINANCE'], static function ($
 });
 
 // -------------------------------------------------------------------------
+// Espace Employé
+// -------------------------------------------------------------------------
+$routes->group('employe', ['filter' => 'role:EMPLOYE,ADMINISTRATEUR'], static function ($routes) {
+    $routes->get('/', 'Employe\AccueilController::index');
+    $routes->get('notifications', 'Employe\NotificationsController::index');
+    $routes->post('notifications/(:num)/marquer-lue', 'Employe\NotificationsController::marquerLue/$1');
+    $routes->post('notifications/tout-marquer-lu', 'Employe\NotificationsController::toutMarquerLu');
+    $routes->get('formations', 'Employe\FormationsController::index');
+    $routes->get('discipline', 'Employe\DisciplineController::index');
+    $routes->post('discipline/(:num)/reponse', 'Employe\DisciplineController::repondre/$1');
+    $routes->post('discipline/sanctions/(:num)/contester', 'Employe\DisciplineController::contester/$1');
+    $routes->get('bulletins', 'Employe\BulletinsController::index');
+    $routes->get('bulletins/(:num)/pdf', 'Employe\BulletinsController::pdf/$1');
+});
+
+// -------------------------------------------------------------------------
 // Admin (technique) — Danie / commun
 // -------------------------------------------------------------------------
 $routes->group('admin', ['filter' => 'role:ADMINISTRATEUR'], static function ($routes) {
@@ -264,25 +353,31 @@ $routes->group('', ['filter' => 'auth'], static function ($routes) {
 
 // -----------------------------------------------------------------------------
 $routes->get('dev/login-as/(:segment)', static function ($role) {
-    $map = ['DIRECTION'=>'direction@test.local',
-            'CANDIDAT'=>'candidat@test.local',
-            'CANDIDAT2'   => 'candidat2@test.local',
-            'CANDIDAT3'   => 'candidat3@test.local',
-            'CANDIDAT4'   => 'candidat4@test.local',
-            'RH'=>'rh@test.local',
-            'DEPARTEMENT'=>'departement@test.local',
-            'ADMINISTRATEUR'=>'admin@test.local',
-            'FINANCE'=>'finance@test.local'];
-    if (! isset($map[$role])) return "Rôle inconnu";
-    $u = \Config\Database::connect()->table('utilisateur')
-        ->where('email', $map[$role])->get()->getRowArray();
-    if (! $u) return "Seed manquant — lance le SQL ci-dessous";
-    session()->set(['id_utilisateur'=>$u['id_utilisateur'],
-                    'email'=>$u['email'],'role'=>$u['role']]);
-    return redirect()->to(match($u['role']){
-        'DIRECTION'=>'/direction','CANDIDAT'=>'/candidat',
-        'RH'=>'/rh','DEPARTEMENT'=>'/departement',
-        'ADMINISTRATEUR'=>'/admin','FINANCE'=>'/direction',default=>'/'
+    // Comptes du seed (DemoDatabaseSeeder). EMPLOYE : employe3 = Faly Randria (incident en cours) ;
+    // EMPLOYE1 = Lova Rabe (formations, évaluations) ; EMPLOYE2 = Soa Rakotoarisoa (rupture FIN_CDD).
+    $map = ['DIRECTION'      => 'direction@test.local',
+            'CANDIDAT'       => 'candidat@test.local',
+            'CANDIDAT2'      => 'candidat2@test.local',
+            'CANDIDAT3'      => 'candidat3@test.local',
+            'CANDIDAT4'      => 'candidat4@test.local',
+            'RH'             => 'rh@test.local',
+            'DEPARTEMENT'    => 'departement@test.local',
+            'ADMINISTRATEUR' => 'admin@test.local',
+            'FINANCE'        => 'finance@test.local',
+            'EMPLOYE'        => 'employe3@test.local',
+            'EMPLOYE1'       => 'employe1@test.local',
+            'EMPLOYE2'       => 'employe2@test.local'];
+    if (! isset($map[$role])) {
+        return 'Rôle inconnu';
+    }
+    $u = \Config\Database::connect()->table('utilisateur')->where('email', $map[$role])->get()->getRowArray();
+    if (! $u) {
+        return 'Seed manquant : lancez php spark db:reset --force';
+    }
+    session()->set(['id_utilisateur' => $u['id_utilisateur'], 'email' => $u['email'], 'role' => $u['role']]);
+    return redirect()->to(match ($u['role']) {
+        'DIRECTION' => '/direction', 'CANDIDAT' => '/candidat', 'RH' => '/rh', 'DEPARTEMENT' => '/departement',
+        'ADMINISTRATEUR' => '/admin', 'FINANCE' => '/direction', 'EMPLOYE' => '/employe', default => '/',
     });
 });
 $routes->get('dev/logout', static function () {

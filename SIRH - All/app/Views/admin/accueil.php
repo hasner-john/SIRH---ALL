@@ -1,38 +1,31 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= esc($titre ?? 'SIRH') ?></title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= esc($titre ?? 'Administration') ?></title>
     <link href="<?= base_url('assets/vendor/bootstrap/bootstrap.min.css') ?>" rel="stylesheet">
-    <style>
-        body { background: #f1f5f9; }
-    </style>
 </head>
-<body>
-<nav class="navbar navbar-dark bg-dark">
-    <div class="container">
-        <span class="navbar-brand">SIRH — Administration</span>
-        <a class="btn btn-outline-light btn-sm" href="<?= site_url('deconnexion') ?>">Déconnexion</a>
-    </div>
-</nav>
-<main class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div><h1 class="h3 mb-1">Espace administrateur</h1><p class="text-muted mb-0">Rôle : <?= esc($role ?? '—') ?></p></div>
-        <a class="btn btn-primary" href="<?= site_url('rh') ?>">Ouvrir l’espace RH</a>
-        <a class="btn btn-outline-primary" href="<?= site_url('rh/demandes') ?>">Valider les demandes RH</a>
-    </div>
-    <div class="row g-3">
-        <?php foreach ([['Utilisateurs', $stats['utilisateurs'], 'primary'], ['Employés actifs', $stats['employes'], 'success'], ['Départements', $stats['departements'], 'warning'], ['Événements audités', $stats['audits'], 'dark']] as [$label, $value, $color]): ?>
-        <div class="col-sm-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body"><div class="text-muted"><?= esc($label) ?></div><div class="display-6 text-<?= esc($color) ?>"><?= esc($value) ?></div></div></div></div>
+<body class="bg-light">
+<div class="container py-4">
+    <h1 class="h3 mb-3"><?= esc($titre) ?> <span class="badge text-bg-secondary"><?= esc($role) ?></span></h1>
+    <div class="row g-3 mb-4">
+        <?php foreach (['utilisateurs' => 'Utilisateurs', 'employes' => 'Employés actifs', 'departements' => 'Départements', 'audits' => 'Lignes d\'audit'] as $k => $lib): ?>
+            <div class="col-6 col-md-3"><div class="card text-center"><div class="card-body"><div class="display-6"><?= (int) ($stats[$k] ?? 0) ?></div><?= $lib ?></div></div></div>
         <?php endforeach; ?>
     </div>
-    <div class="card shadow-sm mt-4"><div class="card-body">
-        <h2 class="h5">Maintenance</h2>
-        <p class="text-muted mb-2">Réinitialisez les données depuis le terminal avec les commandes disponibles :</p>
-        <code>php spark db:reset --force</code>
-    </div></div>
-</main>
-<script src="<?= base_url('assets/vendor/bootstrap/bootstrap.bundle.min.js') ?>"></script>
+    <?php
+    $parSection = [];
+    foreach ($liens as $l) { $parSection[$l['section']][] = $l; }
+    ?>
+    <div class="row g-3">
+        <?php foreach ($parSection as $section => $items): ?>
+            <div class="col-md-6 col-lg-4"><div class="card h-100"><div class="card-header fw-semibold"><?= esc($section) ?></div>
+                <div class="card-body d-flex flex-wrap gap-2">
+                    <?php foreach ($items as $i): ?><a class="btn btn-sm btn-outline-primary" href="<?= site_url($i['url']) ?>"><?= esc($i['label']) ?></a><?php endforeach; ?>
+                </div></div></div>
+        <?php endforeach; ?>
+    </div>
+    <p class="mt-4"><a href="<?= site_url('deconnexion') ?>">Déconnexion</a></p>
+</div>
 </body>
 </html>

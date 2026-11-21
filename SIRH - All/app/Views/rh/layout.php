@@ -22,14 +22,37 @@
   <div class="container">
     <span class="navbar-brand">Espace RH</span>
     <div class="navbar-nav">
-      <a class="nav-link" href="<?= site_url('rh/evaluations') ?>">Évaluations</a>
-      <a class="nav-link" href="<?= site_url('rh/entretiens') ?>">Entretiens</a>
-      <a class="nav-link" href="<?= site_url('rh/tests') ?>">Tests techniques</a>
-      <a class="nav-link" href="<?= site_url('rh/requetes') ?>">Requêtes candidats</a>
-      <a class="nav-link" href="<?= site_url('rh/employes') ?>">Dossiers salariés</a>
-      <a class="nav-link" href="<?= site_url('rh/temps-travail') ?>">Pointage</a>
-      <a class="nav-link" href="<?= site_url('rh/conges') ?>">Congés</a>
-      <a class="nav-link" href="<?= site_url('rh/modules-avances') ?>">Paie & avancés</a>
+      <div class="nav-item dropdown"><a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Recrutement</a><div class="dropdown-menu">
+        <a class="dropdown-item" href="<?= site_url('rh/evaluations') ?>">Évaluations candidats</a>
+        <a class="dropdown-item" href="<?= site_url('rh/entretiens') ?>">Entretiens</a>
+        <a class="dropdown-item" href="<?= site_url('rh/tests') ?>">Tests techniques</a>
+        <a class="dropdown-item" href="<?= site_url('rh/requetes') ?>">Requêtes candidats</a></div></div>
+      <div class="nav-item dropdown"><a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Dossiers</a><div class="dropdown-menu">
+        <a class="dropdown-item" href="<?= site_url('rh/employes') ?>">Dossiers salariés</a>
+        <a class="dropdown-item" href="<?= site_url('rh/employes/nouveau') ?>">Embauche directe</a>
+        <a class="dropdown-item" href="<?= site_url('rh/temps-travail') ?>">Pointage</a>
+        <a class="dropdown-item" href="<?= site_url('rh/conges') ?>">Congés</a></div></div>
+      <div class="nav-item dropdown"><a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Paie</a><div class="dropdown-menu">
+        <a class="dropdown-item" href="<?= site_url('rh/modules-avances') ?>">Bulletins et états</a>
+        <a class="dropdown-item" href="<?= site_url('rh/paie/periodes') ?>">Périodes de paie</a>
+        <a class="dropdown-item" href="<?= site_url('rh/paie/variables') ?>">Variables / indemnités</a>
+        <a class="dropdown-item" href="<?= site_url('rh/paie/heures-supplementaires') ?>">Heures supplémentaires</a>
+        <a class="dropdown-item" href="<?= site_url('rh/temps-travail/retards') ?>">Retards</a></div></div>
+      <div class="nav-item dropdown"><a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Talents</a><div class="dropdown-menu">
+        <a class="dropdown-item" href="<?= site_url('rh/competences') ?>">Compétences</a>
+        <a class="dropdown-item" href="<?= site_url('rh/performance') ?>">Performance</a>
+        <a class="dropdown-item" href="<?= site_url('rh/formations') ?>">Formations</a>
+        <a class="dropdown-item" href="<?= site_url('rh/formations/propositions') ?>">Propositions de formation</a>
+        <a class="dropdown-item" href="<?= site_url('rh/formations/assigner') ?>">Assigner une formation</a>
+        <a class="dropdown-item" href="<?= site_url('rh/formations/apport') ?>">Apport des formations</a>
+        <a class="dropdown-item" href="<?= site_url('rh/carriere') ?>">Carrière</a>
+        <a class="dropdown-item" href="<?= site_url('rh/carriere/propositions') ?>">Propositions de carrière</a></div></div>
+      <div class="nav-item dropdown"><a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Discipline & sorties</a><div class="dropdown-menu">
+        <a class="dropdown-item" href="<?= site_url('rh/discipline/incidents') ?>">Incidents</a>
+        <a class="dropdown-item" href="<?= site_url('rh/discipline/sanctions') ?>">Sanctions</a>
+        <a class="dropdown-item" href="<?= site_url('rh/discipline/reponses') ?>">Réponses des employés</a>
+        <a class="dropdown-item" href="<?= site_url('rh/ruptures') ?>">Ruptures et STC</a></div></div>
+      <a class="nav-link" href="<?= site_url('rh/parametres') ?>">Paramètres</a>
       <a class="nav-link ms-auto text-warning" href="<?= site_url('deconnexion') ?>">Déconnexion</a>
     </div>
   </div>
