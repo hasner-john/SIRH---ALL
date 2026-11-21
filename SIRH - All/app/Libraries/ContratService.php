@@ -52,36 +52,8 @@ class ContratService
      */
     public function genererPdf(int $idContrat): array
     {
-        $contrat = (new ContratModel())->trouverDetaille($idContrat);
-        if (! $contrat) {
-            throw new \RuntimeException("Contrat #$idContrat introuvable.");
-        }
-
-        $conditions = $this->db->table('contrat_condition')
-            ->where('id_contrat', $idContrat)
-            ->orderBy('ordre_affichage', 'ASC')
-            ->get()->getResultArray();
-
-        $html = view('candidat/contrat/pdf', [
-            'contrat'    => $contrat,
-            'conditions' => $conditions,
-            'employeur'  => 'SIRH SARL — Antananarivo, Madagascar',
-        ]);
-
-        $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => false]);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-        $pdfBinary = $dompdf->output();
-
-        $nomFichier = 'contrat_' . $contrat['reference'] . '.pdf';
-
-        $this->db->query(
-            "UPDATE contrat SET pdf_nom = ?, pdf_type_mime = ?, pdf_donnees = ? WHERE id_contrat = ?",
-            [$nomFichier, 'application/pdf', $pdfBinary, $idContrat]
-        );
-
-        return [$nomFichier, 'application/pdf', strlen($pdfBinary)];
+        [$nom, $mime, $bin] = (new \App\Services\ContratPdfService())->generer($idContrat);
+        return [$nom, $mime, strlen($bin)];
     }
 
     /**

@@ -12,6 +12,7 @@ if (! defined('ROLE_DEPARTEMENT')) {
     define('ROLE_CANDIDAT', 'CANDIDAT');
     define('ROLE_ADMINISTRATEUR', 'ADMINISTRATEUR');
     define('ROLE_FINANCE', 'FINANCE');
+    define('ROLE_EMPLOYE', 'EMPLOYE');
 }
 
 if (! function_exists('current_role')) {
@@ -55,6 +56,7 @@ if (! function_exists('role_home')) {
             ROLE_DIRECTION      => '/direction',
             ROLE_CANDIDAT       => '/candidat',
             ROLE_ADMINISTRATEUR => '/admin',
+            ROLE_EMPLOYE        => '/employe',
             ROLE_FINANCE        => '/direction',
             default             => '/connexion',
         };

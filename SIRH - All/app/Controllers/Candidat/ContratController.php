@@ -216,8 +216,25 @@ class ContratController extends BaseController
             'matricule'     => $matricule,
             'date_embauche' => $dateEmbauche,
             'statut'        => 'ACTIF',
+            'id_poste'      => ($contrat['id_poste'] ?? null) ?: ($contrat['demande_id_poste'] ?? null),
+            'id_regime'     => $db->table('regime_travail')->where('actif', 1)->orderBy('id_regime')->get(1)->getRow('id_regime'),
         ]);
         $idEmploye = (int) $db->insertID();
+
+        // Le compte du candidat devient un compte EMPLOYE ; paie, salaire et congés initialisés
+        $db->table('utilisateur')->where('id_utilisateur', (int) ($contrat['id_utilisateur_salarie'] ?? 0))
+            ->where('role', 'CANDIDAT')->update(['role' => 'EMPLOYE']);
+        $db->table('historique_salaire')->insert([
+            'id_employe' => $idEmploye, 'ancien_salaire' => null, 'nouveau_salaire' => $contrat['salaire'],
+            'periodicite_salaire' => $contrat['periodicite_salaire'] ?? 'MENSUEL', 'motif' => 'Embauche',
+            'id_utilisateur' => $idUtilisateur, 'date_effet' => $dateEmbauche,
+        ]);
+        $idAnnuel = $db->table('type_conge')->where('code', 'ANNUEL')->get()->getRow('id_type_conge');
+        if ($idAnnuel) {
+            $db->query('INSERT OR IGNORE INTO solde_conge (id_employe, id_type_conge, annee, acquis, pris, ajuste) VALUES (?,?,?,0,0,0)', [$idEmploye, $idAnnuel, (int) date('Y')]);
+        }
+        \App\Services\PeriodePaieService::assurer((int) date('n', strtotime($dateEmbauche)), (int) date('Y', strtotime($dateEmbauche)));
+        \App\Libraries\Audit::log('CREATE', 'employe', $idEmploye, null, ['matricule' => $matricule, 'contrat' => $id], 'Embauche après signature');
 
         // Historique employé : NULL → ACTIF
         $db->table('historique_employe')->insert([
@@ -253,6 +270,10 @@ class ContratController extends BaseController
                 'lue'            => false,
             ]);
         }
+
+        // PDF définitif du contrat signé (généré une seule fois, puis servi tel quel)
+        $db->table('contrat')->where('id_contrat', $id)->update(['pdf_donnees' => null]);
+        (new \App\Services\ContratPdfService())->generer($id);
 
         $db->transCommit();
 

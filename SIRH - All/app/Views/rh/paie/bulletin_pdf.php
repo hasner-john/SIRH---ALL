@@ -8,6 +8,7 @@ td,th{border:1px solid #999;padding:3px}.r{text-align:right}h3{margin:8px 0 3px}
 <table>
 <tr><td>Matricule : <?= esc($b['matricule']) ?></td><td>Nom : <?= esc($b['nom'].' '.$b['prenom']) ?></td><td>N° CNaPS : <?= esc($b['numero_cnaps']) ?></td></tr>
 <tr><td>Embauche : <?= esc($b['date_embauche']) ?> (<?= $anciennete ?>)</td><td>Catégorie : <?= esc($b['categorie']) ?> — <?= esc($fonction) ?></td><td>Régime : <?= $b['secteur']==='AGRICOLE' ? 'Agricole' : 'Non agricole' ?></td></tr>
+<tr><td>Jours travaillés : <?= rtrim(rtrim(number_format((float) $b['jours_travailles'], 2, '.', ''), '0'), '.') ?> / 30<?= (int) $b['inclus_stc'] ? ' — <strong>dernier bulletin (payé via STC)</strong>' : '' ?></td><td colspan="2"></td></tr>
 <tr><td>Salaire de base : <?= $fmt($b['salaire_base']) ?></td><td>Taux journalier : <?= $fmt($taux_jour) ?></td><td>Taux horaire : <?= $fmt($lignes[0]['taux'] ?? 0) ?></td></tr>
 </table>
 

@@ -19,7 +19,7 @@ CREATE TABLE utilisateur (
     id_utilisateur INTEGER PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     mot_de_passe_hash TEXT NOT NULL,
-    role VARCHAR(30) NOT NULL CHECK (role IN ('DEPARTEMENT', 'RH', 'DIRECTION', 'CANDIDAT', 'ADMINISTRATEUR', 'FINANCE')),
+    role VARCHAR(30) NOT NULL CHECK (role IN ('DEPARTEMENT', 'RH', 'DIRECTION', 'CANDIDAT', 'ADMINISTRATEUR', 'FINANCE', 'EMPLOYE')),
     actif BOOLEAN NOT NULL DEFAULT TRUE,
     date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -284,7 +284,11 @@ CREATE TABLE historique_requete_condition (
 
 CREATE TABLE contrat (
     id_contrat INTEGER PRIMARY KEY,
-    id_candidature BIGINT NOT NULL UNIQUE REFERENCES candidature(id_candidature),
+    id_candidature BIGINT UNIQUE REFERENCES candidature(id_candidature),
+    id_poste BIGINT REFERENCES poste(id_poste),
+    origine VARCHAR(20) NOT NULL DEFAULT 'RECRUTEMENT'
+        CHECK (origine IN ('RECRUTEMENT','DIRECT','PROMOTION','CHANGEMENT_POSTE','CHANGEMENT_STATUT','MUTATION')),
+    id_contrat_precedent BIGINT REFERENCES contrat(id_contrat),
     reference VARCHAR(80) NOT NULL UNIQUE,
     type_contrat VARCHAR(20) NOT NULL CHECK (type_contrat IN ('CE', 'CDD', 'CDI')),
     date_debut DATE NOT NULL,
@@ -296,12 +300,13 @@ CREATE TABLE contrat (
     horaires TEXT,
     conges_absences TEXT,
     statut VARCHAR(30) NOT NULL DEFAULT 'BROUILLON'
-        CHECK (statut IN ('BROUILLON', 'A_SIGNER', 'SIGNE', 'ANNULE')),
+        CHECK (statut IN ('BROUILLON','A_SIGNER','SIGNE','ANNULE','REMPLACE','TERMINE')),
     pdf_nom VARCHAR(255),
     pdf_type_mime VARCHAR(120),
     pdf_donnees BLOB,
     date_signature TIMESTAMP,
-    CHECK (date_fin IS NULL OR date_fin >= date_debut)
+    CHECK (date_fin IS NULL OR date_fin >= date_debut),
+    CHECK (origine <> 'RECRUTEMENT' OR id_candidature IS NOT NULL)
 );
 
 -- Copie figée des conditions définitives intégrées au contrat signé.
@@ -479,12 +484,16 @@ CREATE TABLE heure_supplementaire (
     id_heure_supplementaire INTEGER PRIMARY KEY,
     id_employe BIGINT NOT NULL REFERENCES employe(id_employe) ON DELETE CASCADE,
     date_travail DATE NOT NULL,
+    heure_debut TIME,
+    heure_fin TIME,
     heures NUMERIC(5,2) NOT NULL CHECK (heures > 0),
+    nuit BOOLEAN NOT NULL DEFAULT 0,
     motif TEXT,
     statut VARCHAR(20) NOT NULL DEFAULT 'A_VALIDER'
         CHECK (statut IN ('A_VALIDER', 'VALIDE', 'REFUSEE')),
     id_validateur BIGINT REFERENCES utilisateur(id_utilisateur),
-    UNIQUE (id_employe, date_travail)
+    cree_par BIGINT REFERENCES utilisateur(id_utilisateur),
+    UNIQUE (id_employe, date_travail, nuit)
 );
 CREATE TABLE temps_travaille (
     id_temps INTEGER PRIMARY KEY,
@@ -724,15 +733,21 @@ CREATE TABLE mouvement_carriere (
     id_mouvement INTEGER PRIMARY KEY,
     id_employe BIGINT NOT NULL REFERENCES employe(id_employe) ON DELETE CASCADE,
     type_mouvement VARCHAR(30) NOT NULL
-        CHECK(type_mouvement IN ('PROMOTION','MUTATION','CHANGEMENT_STATUT','REVISION_SALAIRE','AFFECTATION')),
+        CHECK(type_mouvement IN ('PROMOTION','MUTATION','CHANGEMENT_STATUT','REVISION_SALAIRE','AFFECTATION','CHANGEMENT_POSTE')),
     ancien_poste VARCHAR(150),
     nouveau_poste VARCHAR(150),
+    ancien_id_poste BIGINT REFERENCES poste(id_poste),
+    nouveau_id_poste BIGINT REFERENCES poste(id_poste),
     ancien_salaire NUMERIC(14,2),
     nouveau_salaire NUMERIC(14,2),
     id_departement BIGINT REFERENCES departement(id_departement),
+    id_ancien_contrat BIGINT REFERENCES contrat(id_contrat),
+    id_nouveau_contrat BIGINT REFERENCES contrat(id_contrat),
+    nouveau_type_contrat VARCHAR(20) CHECK (nouveau_type_contrat IS NULL OR nouveau_type_contrat IN ('CE','CDD','CDI')),
     date_effet DATE NOT NULL,
     date_fin DATE,
     motif TEXT,
+    statut VARCHAR(20) NOT NULL DEFAULT 'APPLIQUE' CHECK(statut IN ('PLANIFIE','APPLIQUE','ANNULE')),
     id_auteur BIGINT REFERENCES utilisateur(id_utilisateur),
     date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -771,7 +786,7 @@ CREATE TABLE sanction (
     id_sanction INTEGER PRIMARY KEY,
     id_incident BIGINT NOT NULL UNIQUE REFERENCES incident(id_incident) ON DELETE CASCADE,
     type_sanction VARCHAR(40) NOT NULL
-        CHECK(type_sanction IN ('AVERTISSEMENT','BLAME','MISE_A_PIED','LICENCEMENT','AUTRE')),
+        CHECK(type_sanction IN ('AVERTISSEMENT','BLAME','MISE_A_PIED','LICENCIEMENT','AUTRE')),
     motif TEXT NOT NULL,
     date_decision DATE NOT NULL,
     date_effet DATE NOT NULL,
@@ -855,7 +870,6 @@ BEGIN;
 ALTER TABLE employe ADD COLUMN numero_cnaps VARCHAR(30);
 ALTER TABLE employe ADD COLUMN categorie VARCHAR(10);
 ALTER TABLE employe ADD COLUMN secteur VARCHAR(20) NOT NULL DEFAULT 'NON_AGRICOLE';
-ALTER TABLE heure_supplementaire ADD COLUMN nuit BOOLEAN NOT NULL DEFAULT 0;
 ALTER TABLE bulletin_paie ADD COLUMN heures_absence NUMERIC(8,2) NOT NULL DEFAULT 0;
 ALTER TABLE bulletin_paie ADD COLUMN rappels NUMERIC(14,2) NOT NULL DEFAULT 0;
 ALTER TABLE bulletin_paie ADD COLUMN mode_reglement VARCHAR(20) NOT NULL DEFAULT 'VIREMENT';

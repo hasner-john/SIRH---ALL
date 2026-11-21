@@ -37,11 +37,16 @@ class PaieService
         $this->dateRef = $fin;
         $this->cache = [];
 
+        // ACTIF, plus les PARTI dont la rupture (non annulée) a une date de sortie >= début du mois
         $employes = $this->db->table('employe e')
-            ->select('e.*, c.salaire')
+            ->select('e.*, c.salaire, r.date_sortie AS date_sortie')
             ->join('contrat c', 'c.id_contrat = e.id_contrat')
-            ->where('e.statut', 'ACTIF')
+            ->join('rupture_contrat r', "r.id_employe = e.id_employe AND r.statut != 'ANNULEE'", 'left')
             ->where('e.date_embauche <=', $fin)
+            ->groupStart()
+                ->where('e.statut', 'ACTIF')
+                ->orGroupStart()->where('e.statut', 'PARTI')->where('r.date_sortie >=', $debut)->groupEnd()
+            ->groupEnd()
             ->get()->getResultArray();
 
         $this->db->transBegin();
@@ -50,42 +55,64 @@ class PaieService
             $ids = array_column($this->db->table('bulletin_paie')->select('id_bulletin')
                 ->where('id_periode', $periodeId)->get()->getResultArray(), 'id_bulletin');
             if ($ids !== []) {
+                // un STC peut référencer le dernier bulletin : on détache le lien (il est recréé plus bas)
+                $this->db->table('solde_tout_compte')->whereIn('id_bulletin_final', $ids)->update(['id_bulletin_final' => null]);
                 $this->db->table('ligne_bulletin')->whereIn('id_bulletin', $ids)->delete();
                 $this->db->table('bulletin_paie')->where('id_periode', $periodeId)->delete();
             }
+            $nb = 0;
             foreach ($employes as $e) {
-                $this->calculerEmploye($e, $periode, $debut, $fin, $userId, $ip);
+                $nb += $this->calculerEmploye($e, $periode, $debut, $fin, $userId, $ip) ? 1 : 0;
             }
-            $this->db->table('periode_paie')->where('id_periode', $periodeId)->update(['statut' => 'CALCUL']);
             if (! $this->db->transStatus()) {
-                throw new \RuntimeException('Erreur base de données pendant le calcul.');
+                throw new \RuntimeException('Erreur base de données pendant le calcul : ' . ($this->db->error()['message'] ?? 'inconnue'));
             }
             $this->db->transCommit();
         } catch (\Throwable $t) {
             $this->db->transRollback();
             throw $t;
         }
-        return count($employes);
+        return $nb;
     }
 
-    private function calculerEmploye(array $e, array $periode, string $debut, string $fin, int $userId, ?string $ip): void
+    private function calculerEmploye(array $e, array $periode, string $debut, string $fin, int $userId, ?string $ip): bool
     {
         $idE = (int) $e['id_employe'];
         $idP = (int) $periode['id_periode'];
         $sect = $e['secteur'] ?: 'NON_AGRICOLE';
+        $dj = $this->p('DIVISEUR_JOURS', $sect);
 
-        $base = $this->salaireA($idE, $fin, (float) $e['salaire']);
+        // Prorata : jours calendaires travaillés dans le mois
+        $debutTravail = max($debut, $e['date_embauche']);
+        $finTravail = $fin;
+        if (! empty($e['date_sortie'])) {
+            $finTravail = min($fin, $e['date_sortie']);
+        }
+        $jours = (strtotime($finTravail) - strtotime($debutTravail)) / 86400 + 1;
+        if ($jours <= 0) {
+            return false;   // aucun jour travaillé dans le mois (sortie antérieure) : pas de bulletin
+        }
+        $joursTrav = ($debutTravail === $debut && $finTravail === $fin) ? $dj : min($dj, $jours);
+
+        $base = $this->salaireA($idE, $finTravail, (float) $e['salaire']);
         $tauxH = $base / $this->p('DIVISEUR_HEURES', $sect);
-        $tauxJ = $base / $this->p('DIVISEUR_JOURS', $sect);
+        $retProrata = round($base * ($dj - $joursTrav) / $dj, 2);
 
-        $hAbs = $this->heuresAbsence($idE, $debut, $fin, $sect);
+        $hAbs = $this->heuresAbsence($idE, $debutTravail, $finTravail, $sect);
         $retAbs = round($hAbs * $tauxH, 2);
-        $baseMois = max(0, round($base - $retAbs, 2));
+        $minRetard = $this->minutesRetard($idE, $debutTravail, $finTravail);
+        $retRetard = round($minRetard * $tauxH / 60, 2);
+        $joursMep = $this->joursMiseAPied($idE, $debutTravail, $finTravail);
+        $retMep = round($joursMep * $base / $dj, 2);
 
-        $indem = $this->variable($idP, $idE, 'INDEMNITE');
-        $rappel = $this->variable($idP, $idE, 'RAPPEL');
-        $autres = $this->variable($idP, $idE, 'RETENUE');
-        [$majo, $lignesHs] = $this->majorations($idE, $debut, $fin, $tauxH, $sect);
+        $baseMois = max(0, round($base - $retAbs - $retRetard - $retMep - $retProrata, 2));
+
+        $v = $this->variables($idP, $idE);
+        $indem = $v['indem'];
+        $indemNI = $v['indem_ni'];
+        $rappel = $v['rappel'];
+        $autres = $v['avance'];
+        [$majo, $lignesHs] = $this->majorations($idE, $debutTravail, $finTravail, $tauxH, $sect);
 
         $brut = round($baseMois + $indem + $rappel + $majo, 2);
 
@@ -102,8 +129,13 @@ class PaieService
         $ostieP = round($brut * $top / 100, 2);
         $netImp = max(0, round($brut - $cnapsS - $ostieS, 2));
         $irsa = $this->calculerIrsa($netImp, $fin);
+        if ($netImp > 0) {
+            $irsa = max($irsa, $this->p('IRSA_MINIMUM', $sect));   // minimum de perception (paramètre)
+        }
         $totRet = round($cnapsS + $ostieS + $irsa + $autres, 2);
-        $net = round($brut - $totRet, 2);
+        $net = round($brut - $totRet + $indemNI, 2);
+
+        $inclusStc = (int) (! empty($e['date_sortie']) && $e['date_sortie'] >= $debut && $e['date_sortie'] <= $fin);
 
         $this->db->table('bulletin_paie')->insert([
             'id_periode' => $idP, 'id_employe' => $idE,
@@ -114,15 +146,27 @@ class PaieService
             'ostie_salarial' => $ostieS, 'ostie_patronal' => $ostieP,
             'net_imposable' => $netImp, 'irsa' => $irsa,
             'total_retenues' => $totRet, 'net_a_payer' => $net, 'statut' => 'BROUILLON',
+            'jours_travailles' => $joursTrav, 'retenue_prorata' => $retProrata, 'retenue_retard' => $retRetard,
+            'retenue_mise_a_pied' => $retMep, 'indemnites_non_imposables' => $indemNI,
+            'autres_retenues' => $autres, 'inclus_stc' => $inclusStc,
         ]);
         $idB = (int) $this->db->insertID();
+        if ($inclusStc) {
+            $this->db->query(
+                'UPDATE solde_tout_compte SET id_bulletin_final = ? WHERE id_bulletin_final IS NULL AND id_rupture IN (SELECT id_rupture FROM rupture_contrat WHERE id_employe = ?)',
+                [$idB, $idE]
+            );
+        }
 
         $o = 1;
         $l = [
-            ['1000', 'Salaire de base du mois', $this->p('DIVISEUR_HEURES', $sect), round($tauxH, 4), $baseMois, 0],
-            ['1010', 'Retenue pour absence', $hAbs, round($tauxH, 4), 0, $retAbs],
+            ['1000', 'Salaire de base', $this->p('DIVISEUR_HEURES', $sect), round($tauxH, 4), $base, 0],
         ];
-        if ($indem > 0)  { $l[] = ['2000', 'Indemnités', null, null, $indem, 0]; }
+        if ($retAbs > 0) { $l[] = ['1010', 'Retenue pour absence', $hAbs, round($tauxH, 4), 0, $retAbs]; }
+        if ($retRetard > 0) { $l[] = ['1011', 'Retenue retards', $minRetard, round($tauxH / 60, 4), 0, $retRetard]; }
+        if ($retMep > 0) { $l[] = ['1012', sprintf('Retenue mise à pied (%s j)', rtrim(rtrim(number_format($joursMep, 2, '.', ''), '0'), '.')), $joursMep, round($base / $dj, 4), 0, $retMep]; }
+        if ($retProrata > 0) { $l[] = ['1013', sprintf('Prorata jours travaillés (%s/%s)', rtrim(rtrim(number_format($joursTrav, 2, '.', ''), '0'), '.'), $dj), $joursTrav, null, 0, $retProrata]; }
+        if ($indem > 0)  { $l[] = ['2000', 'Indemnités et primes', null, null, $indem, 0]; }
         if ($rappel > 0) { $l[] = ['2100', 'Rappels / autres', null, null, $rappel, 0]; }
         foreach ($lignesHs as $h) { $l[] = [$h['code'], $h['designation'], $h['nb'], $h['coef'], $h['montant'], 0]; }
         $l[] = ['BRUT', 'TOTAL SALAIRE BRUT', null, null, $brut, 0];
@@ -130,6 +174,7 @@ class PaieService
         $l[] = ['4020', 'OSTIE salariale', $brut, $tos, 0, $ostieS];
         $l[] = ['5000', 'IRSA (par tranches)', $netImp, null, 0, $irsa];
         if ($autres > 0) { $l[] = ['6000', 'Acomptes / avances', null, null, 0, $autres]; }
+        if ($indemNI > 0) { $l[] = ['2900', 'Indemnités non imposables (hors brut)', null, null, $indemNI, 0]; }
 
         $rows = [];
         foreach ($l as [$code, $des, $nb, $taux, $gain, $ret]) {
@@ -142,10 +187,67 @@ class PaieService
         $this->db->table('audit_rh')->insert([
             'id_utilisateur' => $userId ?: null, 'action' => 'CREATE', 'objet' => 'bulletin_paie',
             'objet_id' => $idB, 'ancienne_valeur' => null,
-            'nouvelle_valeur' => json_encode(['brut' => $brut, 'net' => $net], JSON_UNESCAPED_UNICODE),
-            'motif' => sprintf('Calcul paie %02d/%04d (taux jour %.2f)', $periode['mois'], $periode['annee'], $tauxJ),
+            'nouvelle_valeur' => json_encode(['brut' => $brut, 'net' => $net, 'jours' => $joursTrav], JSON_UNESCAPED_UNICODE),
+            'motif' => sprintf('Calcul paie %02d/%04d', $periode['mois'], $periode['annee']),
             'adresse_ip' => $ip,
         ]);
+        return true;
+    }
+
+    /** Minutes de retard non justifiés dans l'intervalle (déduites du brut). */
+    private function minutesRetard(int $idE, string $debut, string $fin): int
+    {
+        $r = $this->db->table('retard r')->selectSum('r.minutes', 'm')
+            ->join('pointage p', 'p.id_pointage = r.id_pointage')
+            ->where('p.id_employe', $idE)->where('r.justifie', 0)
+            ->where('p.date_pointage >=', $debut)->where('p.date_pointage <=', $fin)->get()->getRowArray();
+        return (int) ($r['m'] ?? 0);
+    }
+
+    /** Jours de mise à pied (sanction NOTIFIEE/EXECUTOIRE) inclus dans l'intervalle. */
+    private function joursMiseAPied(int $idE, string $debut, string $fin): float
+    {
+        $rows = $this->db->table('sanction s')->select('s.date_effet, s.nb_jours')
+            ->join('incident i', 'i.id_incident = s.id_incident')
+            ->where('i.id_employe', $idE)->where('s.type_sanction', 'MISE_A_PIED')
+            ->whereIn('s.statut', ['NOTIFIEE', 'EXECUTOIRE'])->get()->getResultArray();
+        $total = 0.0;
+        foreach ($rows as $r) {
+            if ((int) $r['nb_jours'] < 1) {
+                continue;
+            }
+            $d1 = max($r['date_effet'], $debut);
+            $d2 = min(date('Y-m-d', strtotime($r['date_effet'] . ' +' . ((int) $r['nb_jours'] - 1) . ' days')), $fin);
+            if ($d2 >= $d1) {
+                $total += (strtotime($d2) - strtotime($d1)) / 86400 + 1;
+            }
+        }
+        return $total;
+    }
+
+    /** Variables du mois classées par catégorie de rubrique (INDEMNITE, PRIME, RAPPEL, AVANCE ; HS ignorée). */
+    private function variables(int $idP, int $idE): array
+    {
+        $rows = $this->db->table('variable_paie v')->select('v.montant, r.categorie, r.imposable')
+            ->join('rubrique_paie r', 'r.id_rubrique = v.id_rubrique')
+            ->where('v.id_periode', $idP)->where('v.id_employe', $idE)->get()->getResultArray();
+        $o = ['indem' => 0.0, 'indem_ni' => 0.0, 'rappel' => 0.0, 'avance' => 0.0];
+        foreach ($rows as $r) {
+            $m = (float) $r['montant'];
+            switch ($r['categorie']) {
+                case 'INDEMNITE':
+                case 'PRIME':
+                    $o[(int) $r['imposable'] ? 'indem' : 'indem_ni'] += $m;
+                    break;
+                case 'RAPPEL':
+                    $o['rappel'] += $m;
+                    break;
+                case 'AVANCE':
+                    $o['avance'] += $m;
+                    break;
+            }
+        }
+        return $o;
     }
 
     /** Majorations : HS 30 % (12 premières h/semaine), 50 % (suivantes), plafond 20 h/semaine,
@@ -154,7 +256,7 @@ class PaieService
     {
         $rows = $this->db->table('heure_supplementaire')
             ->where('id_employe', $idE)->where('statut', 'VALIDE')
-            ->where('date_travail >=', $debut)->where('date_travail <=', $fin)
+            ->where('date_travail >=', date('Y-m-d', strtotime($debut . ' monday this week')))->where('date_travail <=', $fin)
             ->orderBy('date_travail')->get()->getResultArray();
 
         $seuil = $this->p('SEUIL_HS_1', $sect);
@@ -178,6 +280,9 @@ class PaieService
             $h1 = max(0.0, min($h, $seuil - $deja));
             $h2 = $h - $h1;
             $cumul[$sem] = $deja + $h;
+            if ($r['date_travail'] < $debut) {
+                continue;   // heures d'une semaine à cheval : comptées pour le plafond, payées le mois précédent
+            }
             $mult = (date('N', $ts) === '7' ? $cDim : 1) * ($r['nuit'] ? $cNuit : 1);
 
             foreach ([[$h1, $c1, '3010'], [$h2, $c2, '3020']] as [$hh, $c, $code]) {
@@ -216,15 +321,6 @@ class PaieService
             ->where('date_effet <=', $date)->orderBy('date_effet', 'DESC')->orderBy('id_historique', 'DESC')
             ->get(1)->getRowArray();
         return $r ? (float) $r['nouveau_salaire'] : $repli;
-    }
-
-    private function variable(int $idP, int $idE, string $code): float
-    {
-        $row = $this->db->table('variable_paie v')->selectSum('v.montant', 'm')
-            ->join('rubrique_paie r', 'r.id_rubrique = v.id_rubrique')
-            ->where('v.id_periode', $idP)->where('v.id_employe', $idE)->where('r.code', $code)
-            ->get()->getRowArray();
-        return (float) ($row['m'] ?? 0);
     }
 
     private function p(string $code, string $secteur): float
