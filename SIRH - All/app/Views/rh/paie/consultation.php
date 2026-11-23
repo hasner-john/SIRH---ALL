@@ -9,10 +9,10 @@
   <p>Période <strong><?= sprintf('%02d/%04d', $periode['mois'], $periode['annee']) ?></strong>
      — statut <span class="badge text-bg-secondary"><?= esc($periode['statut']) ?></span>
      <a class="btn btn-sm btn-success ms-2" href="<?= site_url('rh/modules-avances/paie/etat/' . (int) $periode['id_periode']) ?>">Exporter Excel</a></p>
-  <?php $cols = ['salaire_base','retenue_absence','base_mois','indemnites','majorations','salaire_brut','cnaps_salarial','ostie_salarial','irsa','total_retenues','net_a_payer'];
+  <?php $cols = ['salaire_base','retenues_base','base_mois','indemnites','majorations','salaire_brut','cnaps_salarial','ostie_salarial','irsa','total_retenues','net_a_payer'];
         $tot = array_fill_keys($cols, 0.0); $f = fn($v) => number_format((float) $v, 0, ',', ' '); ?>
   <div class="table-responsive"><table class="table table-sm table-bordered">
-    <thead><tr><th>Matr.</th><th>Nom et prénoms</th><th>Base</th><th>Ret. abs.</th><th>Base mois</th><th>Indemn.</th>
+    <thead><tr><th>Matr.</th><th>Nom et prénoms</th><th>Base</th><th title="Absences + retards + mise à pied + prorata">Ret. abs.</th><th>Base mois</th><th>Indemn.</th>
       <th>HS/Major.</th><th>Brut</th><th>CNaPS</th><th>OSTIE</th><th>IRSA</th><th>Total ret.</th><th>Net à payer</th><th>Fiche</th></tr></thead>
     <tbody>
     <?php foreach ($bulletins as $b): foreach ($cols as $c) { $tot[$c] += (float) $b[$c]; } ?>
