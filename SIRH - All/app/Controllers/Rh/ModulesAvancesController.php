@@ -78,6 +78,12 @@ class ModulesAvancesController extends BaseController
                 ->where('bp.id_periode', $periode['id_periode'])
                 ->orderBy('e.matricule')->get()->getResultArray();
 
+            // « Ret. abs. » regroupe toutes les retenues qui réduisent la base du mois (comme l'état Excel)
+            foreach ($bulletins as &$b) {
+                $b['retenues_base'] = (float) $b['retenue_absence'] + (float) $b['retenue_retard'] + (float) $b['retenue_mise_a_pied'] + (float) $b['retenue_prorata'];
+            }
+            unset($b);
+
             // RG-TRANS-04 : log de consultation
             $db->table('journal_acces')->insert([
                 'id_utilisateur' => (int) session()->get('id_utilisateur'),

@@ -64,6 +64,15 @@ class PaieService
             foreach ($employes as $e) {
                 $nb += $this->calculerEmploye($e, $periode, $debut, $fin, $userId, $ip) ? 1 : 0;
             }
+            // Le dernier bulletin d'un employé sorti alimente son STC : on recalcule les STC encore en brouillon
+            $finals = $this->db->query(
+                "SELECT r.id_rupture FROM bulletin_paie b JOIN rupture_contrat r ON r.id_employe = b.id_employe AND r.statut != 'ANNULEE'
+                 JOIN solde_tout_compte s ON s.id_rupture = r.id_rupture AND s.statut = 'BROUILLON'
+                 WHERE b.id_periode = ? AND b.inclus_stc = 1", [$periodeId]
+            )->getResultArray();
+            foreach ($finals as $f) {
+                (new StcService())->calculer((int) $f['id_rupture']);
+            }
             if (! $this->db->transStatus()) {
                 throw new \RuntimeException('Erreur base de données pendant le calcul : ' . ($this->db->error()['message'] ?? 'inconnue'));
             }

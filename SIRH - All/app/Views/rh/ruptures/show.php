@@ -17,6 +17,7 @@
     <?php foreach (['salaire_proratise' => 'Salaire proratisé', 'indemnite_conges' => 'Indemnité de congés (' . $stc['jours_conges_restants'] . ' j)', 'indemnite_rupture' => 'Indemnité de rupture', 'avances' => '− Avances', 'retenues' => '− Retenues'] as $k => $l): ?>
     <tr><td><?= esc($l) ?></td><td><input class="form-control form-control-sm text-end" type="number" step="0.01" min="0" name="<?= $k ?>" value="<?= esc($stc[$k]) ?>" <?= $edit ? '' : 'readonly' ?>></td></tr><?php endforeach; ?>
     <tr class="fw-bold"><td>Net à payer</td><td class="text-end"><?= number_format((float) $stc['montant_net'], 0, ',', ' ') ?> Ar</td></tr></tbody></table>
+  <p class="small text-muted mb-1"><?= $stc['id_bulletin_final'] ? 'Salaire proratisé = net du dernier bulletin (n°' . (int) $stc['id_bulletin_final'] . ').' : 'Aucun bulletin final : salaire proratisé = base × jours travaillés / 30. Calculez la paie du mois de sortie puis recalculez le STC.' ?></p>
   <span class="badge text-bg-secondary"><?= esc($stc['statut']) ?></span>
   <?php if ($edit): ?><button class="btn btn-sm btn-primary">Enregistrer les montants</button><?php endif; ?>
 </form>

@@ -40,11 +40,12 @@ class StcService
         $sal = $this->db->table('historique_salaire')->where('id_employe', $e['id_employe'])->where('date_effet <=', $sortie)->orderBy('date_effet', 'DESC')->orderBy('id_historique', 'DESC')->get(1)->getRowArray();
         $base = $sal ? (float) $sal['nouveau_salaire'] : (float) $e['salaire'];
 
-        // Salaire proratisé : net du dernier bulletin, sinon base × jours / 30
+        // Salaire proratisé : net du dernier bulletin (celui calculé AVEC la rupture : inclus_stc = 1),
+        // sinon base × jours / 30. Un bulletin calculé avant la rupture (mois complet) est ignoré.
         $debutMois = date('Y-m-01', strtotime($sortie));
         $bul = $this->db->query(
             'SELECT b.* FROM bulletin_paie b JOIN periode_paie p ON p.id_periode = b.id_periode
-             WHERE b.id_employe = ? AND p.mois = ? AND p.annee = ? AND b.statut != ?',
+             WHERE b.id_employe = ? AND p.mois = ? AND p.annee = ? AND b.statut != ? AND b.inclus_stc = 1',
             [$e['id_employe'], (int) date('n', strtotime($sortie)), (int) date('Y', strtotime($sortie)), 'ANNULE']
         )->getRowArray();
         if ($bul) {
